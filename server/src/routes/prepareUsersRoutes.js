@@ -4,7 +4,7 @@ import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
 import auth from "../middlewares/auth.js"
 import { sanitizeUser } from "../sanitizers.js"
-import { NotFoundError } from "../error.js"
+import { NotFoundError, InvalidAccessError } from "../error.js"
 
 import {
   emailValidator,
@@ -131,8 +131,6 @@ const prepareUsersRoutes = ({ app, db }) => {
           return
         }
 
-        console.log(sanitizeUser(user))
-
         res.send({ result: sanitizeUser(user) })
       })
     ),
@@ -154,13 +152,12 @@ const prepareUsersRoutes = ({ app, db }) => {
             body: { firstName, lastName, email, roleId },
             params: { userId },
           },
-          //session: { user: sessionUser },
+          session: { user: sessionUser },
         } = req
 
-        //console.log(sessionUser)
-        //if (userId !== sessionUser.id) {
-        //throw new InvalidAccessError()
-        //}
+        if (userId !== sessionUser.id && sessionUser.role !== "admin") {
+          throw new InvalidAccessError()
+        }
 
         const user = await checkIfUserExists(userId, res)
 
@@ -176,6 +173,35 @@ const prepareUsersRoutes = ({ app, db }) => {
         })
 
         res.send({ result: sanitizeUser(updatedUser) })
+      })
+    ),
+    app.delete(
+      "/users/:userId",
+      auth,
+      validate({
+        params: { userId: idValidator.required() },
+      }),
+      mw(async (req, res) => {
+        const {
+          data: {
+            params: { userId },
+          },
+          session: { user: sessionUser },
+        } = req
+
+        if (sessionUser.role !== "admin") {
+          throw new InvalidAccessError()
+        }
+
+        const user = await checkIfUserExists(userId, res)
+
+        if (!user) {
+          return
+        }
+
+        await UserModel.query().deleteById(userId)
+
+        res.send("user deleted")
       })
     )
 }

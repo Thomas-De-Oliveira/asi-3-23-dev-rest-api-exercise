@@ -5,7 +5,6 @@ import mw from "./mw.js"
 
 const auth = mw(async (req, res, next) => {
   const { authorization } = req.headers
-  console.log(req.headers)
 
   if (!authorization) {
     throw new InvalidSessionError()
