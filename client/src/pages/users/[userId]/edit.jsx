@@ -1,12 +1,15 @@
 import apiRoutes from "@/apiRoutes.js"
 import UserFormEdit from "@/components/business/UserFormEdit.jsx"
 import Page from "@/components/Pages.jsx"
-import ErrorMessages from "@/components/ui/ErrorMessages.jsx"
 import axios from "axios"
 import { useCallback, useEffect, useState } from "react"
 import { formatUser } from "@/dataFormatters.js"
+import cookie from "cookie"
 
-export const getServerSideProps = async ({ params }) => {
+export const getServerSideProps = async ({ req, params }) => {
+  const { token } = cookie.parse(
+    req ? req.headers.cookie || "" : document.cookie
+  )
   const userId = params.userId
   const { data } = await axios(apiRoutes.roles.read.collection())
 
@@ -14,6 +17,7 @@ export const getServerSideProps = async ({ params }) => {
     props: {
       roles: data,
       userId: userId,
+      token: token,
     },
   }
 }
@@ -22,29 +26,30 @@ const EditUserPage = (props) => {
   const {
     roles: { result },
     userId,
+    token,
   } = props
-  const [error, setError] = useState("")
+
   const [user, setUser] = useState(null)
   const handleSubmit = useCallback(
     async ({ firstName, lastName, email, roleId }) => {
-      setError("")
-
-      try {
-        const {
-          data: { result },
-        } = await axios.patch(apiRoutes.users.update(userId), {
+      const {
+        data: { result },
+      } = await axios.patch(
+        apiRoutes.users.update(userId),
+        {
           firstName,
           lastName,
           email,
           roleId,
-        })
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
 
-        setUser(formatUser(result))
-      } catch (err) {
-        setError(err.response?.data?.error || "Oops, something went wrong.")
-      }
+      setUser(formatUser(result))
     },
-    [userId]
+    [token, userId]
   )
 
   useEffect(() => {
@@ -63,9 +68,6 @@ const EditUserPage = (props) => {
 
   return (
     <Page title={`Editing user #${userId}`}>
-      {error && (
-        <ErrorMessages className="max-w-xl mx-auto my-8" errors={error} />
-      )}
       <UserFormEdit
         onSubmit={handleSubmit}
         initialValues={user[0]}

@@ -17,6 +17,7 @@ export const getServerSideProps = async ({ req, params }) => {
   return {
     props: {
       users: data,
+      token: token,
     },
   }
 }
@@ -24,15 +25,21 @@ export const getServerSideProps = async ({ req, params }) => {
 const UsersPage = (props) => {
   const {
     users: { result },
+    token,
   } = props
 
   const [users, setUsers] = useState(result)
 
-  const deleteUser = useCallback(async (userId) => {
-    await axios.delete(apiRoutes.users.delete(userId))
+  const deleteUser = useCallback(
+    async (userId) => {
+      await axios.delete(apiRoutes.users.delete(userId), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-    setUsers((users) => users.filter(({ id }) => id !== userId))
-  }, [])
+      setUsers((users) => users.filter(({ id }) => id !== userId))
+    },
+    [token]
+  )
 
   return (
     <Page title="List of all users">
