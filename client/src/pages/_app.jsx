@@ -1,11 +1,11 @@
+import { AppContextProvider } from "@/components/AppContext.jsx"
 import "@/globals.css"
-import Page from "@/web/components/Pages"
 
-const App = ({ Component, pageProps }) => {
+const App = ({ Component, pageProps, router }) => {
   return (
-    <Page>
-      <Component {...pageProps} />
-    </Page>
+    <AppContextProvider isPublicPage={Component.isPublic}>
+      <Component {...pageProps} router={router} />
+    </AppContextProvider>
   )
 }
 

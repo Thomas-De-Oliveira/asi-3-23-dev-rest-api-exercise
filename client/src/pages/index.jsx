@@ -1,5 +1,9 @@
-const Home = () => {
-  return <div>coucou</div>
+import Page from "@/components/Pages.jsx"
+
+const IndexPage = () => {
+  return <Page>Welcome~!</Page>
 }
 
-export default Home
+IndexPage.isPublic = true
+
+export default IndexPage

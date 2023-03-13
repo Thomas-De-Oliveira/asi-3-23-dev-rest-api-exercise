@@ -5,7 +5,7 @@
       "@/*": ["./src/*"],
       "@@/*": ["./*"],
     },
-    "module": "ESNext",
+    "module": "esnext",
     "moduleResolution": "nodenext"
   }
 }
