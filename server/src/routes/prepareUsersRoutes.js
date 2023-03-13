@@ -1,27 +1,46 @@
 import hashPassword from "../db/hashPassword.js"
 import UserModel from "../db/models/UserModel.js"
+import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
+import auth from "../middlewares/auth.js"
+import { sanitizeUser } from "../sanitizers.js"
+import { NotFoundError } from "../error.js"
+
 import {
   emailValidator,
   passwordValidator,
   stringValidator,
+  idValidator,
 } from "../validators.js"
 
 const prepareUsersRoutes = ({ app, db }) => {
+  const checkIfUserExists = async (userId) => {
+    const user = await UserModel.query().findById(userId)
+
+    if (user) {
+      return user
+    }
+
+    throw new NotFoundError()
+  }
+
   app.post(
-    "/createUsers",
+    "/:nameRole/createUser",
     validate({
-      query: {
+      params: {
         nameRole: stringValidator,
       },
       body: {
+        firstName: stringValidator.required(),
+        lastName: stringValidator.required(),
         email: emailValidator.required(),
         password: passwordValidator.required(),
+        roleId: idValidator.required(),
       },
     }),
-    async (req, res) => {
-      const { nameRole } = req.locals.query
-      const { email, password } = req.locals.body
+    mw(async (req, res) => {
+      const { nameRole } = req.data.params
+      const { email, password, firstName, lastName, roleId } = req.data.body
 
       if (nameRole === "admin") {
         const user = await UserModel.query().findOne({ email })
@@ -35,9 +54,12 @@ const prepareUsersRoutes = ({ app, db }) => {
         const [passwordHash, passwordSalt] = await hashPassword(password)
 
         await db("users").insert({
+          firstName,
+          lastName,
           email,
           passwordHash,
           passwordSalt,
+          roleId,
         })
 
         res.send({ result: "OK" })
@@ -46,8 +68,116 @@ const prepareUsersRoutes = ({ app, db }) => {
 
         return
       }
-    }
+    })
   )
+  app.get(
+    "/:nameRole/users",
+    auth,
+    validate({
+      params: {
+        nameRole: stringValidator.required(),
+      },
+    }),
+    mw(async (req, res) => {
+      const { nameRole } = req.data.params
+
+      if (nameRole === "admin") {
+        const users = await UserModel.query()
+          .select(
+            "users.id",
+            "users.firstName",
+            "users.lastName",
+            "users.email",
+            "roles.name as role"
+          )
+          .innerJoin("roles", "users.roleId", "roles.id")
+
+        if (!users) {
+          res.send({ result: "OK" })
+
+          return
+        }
+
+        res.send({ result: users })
+      } else {
+        res.send({ result: "You are not admin" })
+
+        return
+      }
+    })
+  ),
+    app.get(
+      "/users/:userId",
+      validate({
+        params: {
+          userId: idValidator.required(),
+        },
+      }),
+      mw(async (req, res) => {
+        const { userId } = req.data.params
+        const user = await db("users")
+          .where({ id: userId })
+          .select(
+            "users.id",
+            "users.firstName",
+            "users.lastName",
+            "users.email",
+            "users.roleId"
+          )
+
+        if (!user) {
+          res.send({ result: "Not User Found" })
+
+          return
+        }
+
+        console.log(sanitizeUser(user))
+
+        res.send({ result: sanitizeUser(user) })
+      })
+    ),
+    app.patch(
+      "/users/:userId",
+      auth,
+      validate({
+        params: { userId: idValidator.required() },
+        body: {
+          firstName: stringValidator,
+          lastName: stringValidator,
+          email: emailValidator,
+          roleId: idValidator,
+        },
+      }),
+      mw(async (req, res) => {
+        const {
+          data: {
+            body: { firstName, lastName, email, roleId },
+            params: { userId },
+          },
+          //session: { user: sessionUser },
+        } = req
+
+        //console.log(sessionUser)
+        //if (userId !== sessionUser.id) {
+        //throw new InvalidAccessError()
+        //}
+
+        const user = await checkIfUserExists(userId, res)
+
+        if (!user) {
+          return
+        }
+
+        const updatedUser = await UserModel.query().updateAndFetchById(userId, {
+          ...(firstName ? { firstName } : {}),
+          ...(lastName ? { lastName } : {}),
+          ...(email ? { email } : {}),
+          ...(roleId ? { roleId } : {}),
+        })
+
+        res.send({ result: sanitizeUser(updatedUser) })
+      })
+    )
 }
 
 export default prepareUsersRoutes

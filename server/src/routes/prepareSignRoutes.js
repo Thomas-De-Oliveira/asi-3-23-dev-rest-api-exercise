@@ -1,8 +1,10 @@
 import jsonwebtoken from "jsonwebtoken"
 import config from "../config.js"
+import { InvalidCredentialsError } from "../error.js"
 import hashPassword from "../db/hashPassword.js"
+import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
-import { emailValidator, stringValidator } from "../validators.js"
+import { emailValidator } from "../validators.js"
 
 const prepareSignRoutes = ({ app, db }) => {
   app.post(
@@ -10,25 +12,22 @@ const prepareSignRoutes = ({ app, db }) => {
     validate({
       body: {
         email: emailValidator.required(),
-        password: stringValidator.required(),
       },
     }),
-    async (req, res) => {
-      const { email, password } = req.locals.body
-      const [user] = await db("users").where({ email }).withGraphFetched("role")
+    mw(async (req, res) => {
+      const { email, password } = req.data.body
+      const [user] = await db("users")
+        .where({ email })
+        .innerJoin("roles", "users.roleId", "roles.id")
 
       if (!user) {
-        res.status(401).send({ error: "Invalid credentials." })
-
-        return
+        throw new InvalidCredentialsError()
       }
 
-      const [passwordHash] = await hashPassword(password, user.passwordSalt)
+      const [passwordHash] = hashPassword(password, user.passwordSalt)
 
-      if (passwordHash !== user.passwordHash) {
-        res.status(401).send({ error: "Invalid credentials." })
-
-        return
+      if (user.passwordHash !== passwordHash) {
+        throw new InvalidCredentialsError()
       }
 
       const jwt = jsonwebtoken.sign(
@@ -36,16 +35,16 @@ const prepareSignRoutes = ({ app, db }) => {
           payload: {
             user: {
               id: user.id,
-              role: user.roles.name,
+              role: user.name,
             },
           },
         },
         config.security.jwt.secret,
-        config.security.jwt.options
+        { expiresIn: config.security.jwt.expiresIn }
       )
 
       res.send({ result: jwt })
-    }
+    })
   )
 }
 

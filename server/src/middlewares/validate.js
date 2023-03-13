@@ -1,5 +1,5 @@
 import * as yup from "yup"
-import { InvalidArgumentError } from "../errors.js"
+import { InvalidArgumentError } from "../error.js"
 import mw from "./mw.js"
 
 const validate = (validators) =>

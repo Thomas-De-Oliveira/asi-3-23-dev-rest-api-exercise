@@ -13,4 +13,7 @@ export default {
     directory: "./src/db/migrations",
     stub: "./src/db/migration.stub",
   },
+  seeds: {
+    directory: "./src/db/seeds",
+  },
 }
