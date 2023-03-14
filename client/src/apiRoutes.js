@@ -18,6 +18,16 @@ const apiRoutes = {
       collection: () => `${config.api.baseURL}/roles`,
     },
   },
+  nav: {
+    create: () => `${config.api.baseURL}/createNav`,
+    read: {
+      collectionWithPages: () => `${config.api.baseURL}/navigationPages`,
+      collection: () => `${config.api.baseURL}/navigation`,
+      single: (navId) => `${config.api.baseURL}/nav/${navId}`,
+    },
+    update: (navId) => `${config.api.baseURL}/nav/${navId}`,
+    delete: (navId) => `${config.api.baseURL}/nav/${navId}`,
+  },
 }
 
 export default apiRoutes

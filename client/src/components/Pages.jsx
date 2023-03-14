@@ -5,8 +5,10 @@ import routes from "@/routes.js"
 import { useState, useContext } from "react"
 import Link from "./Link"
 import { useRouter } from "next/router.js"
-import { useCallback } from "react"
+import { useCallback, useEffect } from "react"
+import apiRoutes from "@/apiRoutes"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import axios from "axios"
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons"
 
 const Page = (props) => {
@@ -16,6 +18,18 @@ const Page = (props) => {
   const {
     state: { session },
   } = useContext(AppContext)
+
+  const [navigation, setNav] = useState([])
+
+  useEffect(() => {
+    ;(async () => {
+      const {
+        data: { result },
+      } = await axios(apiRoutes.nav.read.collectionWithPages())
+
+      setNav(result)
+    })()
+  }, [])
 
   const { signOut } = useContext(AppContext)
 
@@ -68,6 +82,25 @@ const Page = (props) => {
                 {" "}
                 Accueil
               </Link>
+              {navigation.map((nav, index) => (
+                <div key={index} className="group">
+                  <h1 className="text-lg font-semibold">{nav.name}</h1>
+                  <div className="hidden group-hover:block hover:block">
+                    {nav.pages.map((page, index) => (
+                      <li key={index} className="text-sm text-gray-600 my-2.5">
+                        <Link
+                          href={"/"}
+                          onClick={handleIsOpenClick}
+                          className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                        >
+                          {" "}
+                          {page.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
             {session && !session.user ? (
               <div className="flex flex-col items-center">
@@ -97,6 +130,22 @@ const Page = (props) => {
                 >
                   {" "}
                   Ajout utilisateur
+                </Link>
+                <Link
+                  href={routes.nav.read.collection(session.user.role)}
+                  onClick={handleIsOpenClick}
+                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {" "}
+                  Controle Navbar
+                </Link>
+                <Link
+                  href={"/"}
+                  onClick={handleIsOpenClick}
+                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {" "}
+                  Controle Pages
                 </Link>
                 <Link
                   href={"/"}

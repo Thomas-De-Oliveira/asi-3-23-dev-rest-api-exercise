@@ -8,6 +8,14 @@ const routes = {
     },
     update: (userId) => `/users/${userId}/edit`,
   },
+  nav: {
+    create: (nameRole) => `/${nameRole}/createNav`,
+    read: {
+      collection: (nameRole) => `/${nameRole}/nav`,
+      single: (navId) => `/nav/${navId}`,
+    },
+    update: (navId) => `/nav/${navId}/edit`,
+  },
   sign: {
     in: () => "/sign-in",
   },
