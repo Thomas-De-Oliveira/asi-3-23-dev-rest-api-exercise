@@ -17,7 +17,7 @@ export const up = async (knex) => {
 
   await knex.schema.createTable("navigation", (table) => {
     table.increments("id")
-    table.text("title").notNullable()
+    table.text("name").notNullable()
   })
 
   await knex.schema.createTable("rel_nav_pages", (table) => {

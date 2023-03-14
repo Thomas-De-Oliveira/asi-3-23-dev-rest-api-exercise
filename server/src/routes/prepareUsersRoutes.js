@@ -126,9 +126,7 @@ const prepareUsersRoutes = ({ app, db }) => {
           )
 
         if (!user) {
-          res.send({ result: "Not User Found" })
-
-          return
+          throw new NotFoundError()
         }
 
         res.send({ result: sanitizeUser(user) })
