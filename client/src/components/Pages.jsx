@@ -89,7 +89,7 @@ const Page = (props) => {
                     {nav.pages.map((page, index) => (
                       <li key={index} className="text-sm text-gray-600 my-2.5">
                         <Link
-                          href={"/"}
+                          href={routes.pages.read.contentPage(page.slug)}
                           onClick={handleIsOpenClick}
                           className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                         >
@@ -140,7 +140,7 @@ const Page = (props) => {
                   Controle Navbar
                 </Link>
                 <Link
-                  href={"/"}
+                  href={routes.pages.read.collection()}
                   onClick={handleIsOpenClick}
                   className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                 >

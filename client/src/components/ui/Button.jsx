@@ -5,11 +5,11 @@ const variants = {
 }
 
 const Button = (props) => {
-  const { variant = "primary", ...otherProps } = props
+  const { variant = "primary",className, ...otherProps } = props
 
   return (
     <button
-      className={clsx("px-3 py-2", variants[variant])}
+      className={clsx("px-3 py-2", variants[variant], className)}
       {...otherProps}
     ></button>
   )

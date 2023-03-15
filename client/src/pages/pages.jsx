@@ -1,6 +1,6 @@
-import apiRoutes from "../../apiRoutes.js"
-import NavList from "../../components/business/NavList.jsx"
-import Page from "../../components/Pages.jsx"
+import apiRoutes from "@/apiRoutes.js"
+import PageList from "@/components/business/PageList.jsx"
+import Page from "@/components/Pages.jsx"
 import axios from "axios"
 import { useCallback, useState } from "react"
 import cookie from "cookie"
@@ -12,13 +12,14 @@ export const getServerSideProps = async ({ req }) => {
   const { token } = cookie.parse(
     req ? req.headers.cookie || "" : document.cookie
   )
-  const { data } = await axios(apiRoutes.nav.read.collection(), {
+  
+  const { data } = await axios(apiRoutes.pages.read.collection(), {
     headers: { Authorization: `Bearer ${token}` },
   })
 
   return {
     props: {
-      navigation: data,
+      pages: data,
       token: token,
     },
   }
@@ -26,29 +27,29 @@ export const getServerSideProps = async ({ req }) => {
 
 const NavPage = (props) => {
   const {
-    navigation: { result },
+    pages: { result },
     token,
   } = props
 
-  const [navigation, setNav] = useState(result)
+  const [pages, setPages] = useState(result)
 
-  const deleteNav = useCallback(
-    async (navId) => {
-      await axios.delete(apiRoutes.nav.delete(navId), {
+  const deletePage = useCallback(
+    async (pageId) => {
+      await axios.delete(apiRoutes.pages.delete(pageId), {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      setNav((navigation) => navigation.filter(({ id }) => id !== navId))
+      setPages((pages) => pages.filter(({ id }) => id !== pageId))
     },
     [token]
   )
 
   return (
     <Page title="List of all users">
-      <NavList navigation={navigation} deleteNav={deleteNav} />
+      <PageList pages={pages} deletePage={deletePage} />
       <div className="mt-2">
         <Button>
-          <Link href={routes.nav.create()}>Create NavBar title</Link>
+          <Link href={routes.pages.create()}>Create Page</Link>
         </Button>
       </div>
     </Page>

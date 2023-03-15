@@ -1,8 +1,9 @@
 import clsx from "clsx"
 import { useField } from "formik"
 
+
 const FormField = (props) => {
-  const { className, label, name, placeholder, ...otherProps } = props
+  const { className, label, name,type="text", placeholder, ...otherProps } = props
   const [field, { touched, error }] = useField({ name })
 
   return (
@@ -11,6 +12,7 @@ const FormField = (props) => {
       <input
         className="px-3 py-1.5 border"
         {...field}
+        type={type}
         placeholder={placeholder ?? label}
         {...otherProps}
       />
