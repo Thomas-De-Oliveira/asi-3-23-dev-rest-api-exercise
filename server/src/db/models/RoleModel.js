@@ -1,6 +1,5 @@
 import BaseModel from "./BaseModel.js"
 import UserModel from "./UserModel.js"
-import PermissionModel from "./RoleModel.js"
 
 class RoleModel extends BaseModel {
   static tableName = "roles"
@@ -13,14 +12,6 @@ class RoleModel extends BaseModel {
         join: {
           from: "roles.id",
           to: "users.roleId",
-        },
-      },
-      permission: {
-        relation: BaseModel.BelongsToOneRelation,
-        modelClass: PermissionModel,
-        join: {
-          from: "roles.permissionId",
-          to: "permissions.id",
         },
       },
     }
