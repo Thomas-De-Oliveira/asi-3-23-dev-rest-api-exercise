@@ -45,7 +45,7 @@ const NavPage = (props) => {
   )
 
   return (
-    <Page title="List of all users">
+    <Page title="List of all nav title">
       <NavList navigation={navigation} deleteNav={deleteNav} />
       <div className="mt-2">
         <Button>
