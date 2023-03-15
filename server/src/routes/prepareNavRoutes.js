@@ -14,26 +14,13 @@ import {
 const prepareNavRoutes = ({ app, db }) => {
   app.get(
     "/navigationPages",
-    validate({
-      query: {
-        limit: limitValidator,
-        offset: pageValidator,
-      },
-    }),
+    validate({}),
     mw(async (req, res) => {
-      const {
-        data: {
-          query: { limit, offset },
-        },
-      } = req
-
       const navigation = await NavigationModel.query()
         .select("navigation.name", "pages.title", "pages.slug")
         .innerJoin("rel_nav_pages", "navigation.id", "rel_nav_pages.navId")
         .innerJoin("pages", "rel_nav_pages.pageId", "pages.id")
         .orderBy("navigation.name")
-        .limit(limit)
-        .offset(offset)
 
       if (!navigation) {
         throw new NotFoundError()
@@ -56,26 +43,34 @@ const prepareNavRoutes = ({ app, db }) => {
             })
       )
 
+      
+
       res.send({ result: tableNav })
     })
   ),
     app.get(
       "/navigation",
+      auth,
       validate({
         query: {
           limit: limitValidator,
-          offset: pageValidator,
+          page: pageValidator,
         },
       }),
       mw(async (req, res) => {
         const {
           data: {
-            query: { limit, offset },
+            query: { limit, page },
           },
+          session: { user: sessionUser },
         } = req
+
+        if (sessionUser.role === "editor") {
+          throw new InvalidAccessError()
+        }
+
         const navigation = await NavigationModel.query()
-          .limit(limit)
-          .offset(offset)
+        .modify("paginate", limit, page)
 
         if (!navigation) {
           throw new NotFoundError()

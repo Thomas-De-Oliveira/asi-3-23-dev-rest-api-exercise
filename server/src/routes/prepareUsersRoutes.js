@@ -11,6 +11,8 @@ import {
   passwordValidator,
   stringValidator,
   idValidator,
+  pageValidator,
+  limitValidator
 } from "../validators.js"
 
 const prepareUsersRoutes = ({ app, db }) => {
@@ -77,9 +79,18 @@ const prepareUsersRoutes = ({ app, db }) => {
       params: {
         nameRole: stringValidator.required(),
       },
+      query: {
+        limit: limitValidator,
+        page: pageValidator,
+      },
     }),
     mw(async (req, res) => {
-      const { nameRole } = req.data.params
+      const {
+        data: {
+          query: { limit, page },
+          params: {nameRole}
+        },
+      } = req
 
       if (nameRole === "admin") {
         const users = await UserModel.query()
@@ -91,6 +102,8 @@ const prepareUsersRoutes = ({ app, db }) => {
             "roles.name as role"
           )
           .innerJoin("roles", "users.roleId", "roles.id")
+          .modify("paginate", limit, page)
+
 
         if (!users) {
           res.send({ result: "OK" })
