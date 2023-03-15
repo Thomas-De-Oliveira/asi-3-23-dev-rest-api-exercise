@@ -28,6 +28,17 @@ const apiRoutes = {
     update: (navId) => `${config.api.baseURL}/nav/${navId}`,
     delete: (navId) => `${config.api.baseURL}/nav/${navId}`,
   },
+  pages: {
+    create: () => `${config.api.baseURL}/createPage`,
+    read: {
+      collection: () => `${config.api.baseURL}/pages`,
+      contentPage: (slug) => `${config.api.baseURL}/pages/${slug}`,
+      single: (pageId) => `${config.api.baseURL}/page/${pageId}`,
+    },
+    update: (pageId) => `${config.api.baseURL}/page/${pageId}`,
+    updateContent: (pageId) => `${config.api.baseURL}/content/${pageId}`,
+    delete: (pageId) => `${config.api.baseURL}/page/${pageId}`,
+  },
 }
 
 export default apiRoutes

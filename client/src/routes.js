@@ -16,6 +16,16 @@ const routes = {
     },
     update: (navId) => `/nav/${navId}/edit`,
   },
+  pages: {
+    create: () => `/createPage`,
+    read: {
+      collection: () => `/pages`,
+      single: (pageId) => `/page/${pageId}`,
+      contentPage: (slug) => `/pages/content/${slug}`,
+    },
+    update: (pageId) => `/page/${pageId}/edit`,
+    updateContent: (pageId) => `/pages/${pageId}/edit`,
+  },
   sign: {
     in: () => "/sign-in",
   },
