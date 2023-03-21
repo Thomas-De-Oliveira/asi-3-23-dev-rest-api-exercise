@@ -37,6 +37,7 @@ const preparePagesRoutes = ({ app, db }) => {
   ),
     app.get(
       "/pages",
+      auth(["admin", "manager"]),
       validate({
         query: {
           limit: limitValidator,
@@ -50,7 +51,7 @@ const preparePagesRoutes = ({ app, db }) => {
           },
         } = req
 
-        const pages = PageModel.query()
+        const pages = await PageModel.query()
           .innerJoin("users", "pages.creator", "=", "users.id")
           .select(
             "pages.id",

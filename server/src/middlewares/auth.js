@@ -1,4 +1,4 @@
-import { InvalidSessionError } from "../error.js"
+import { InvalidAccessError, InvalidSessionError } from "../error.js"
 import mw from "./mw.js"
 
 const auth = (role) =>
@@ -7,8 +7,12 @@ const auth = (role) =>
       session: { user: sessionUser },
     } = req
 
-    if (!sessionUser.role === role || !role.includes(sessionUser.role)) {
+    if (sessionUser === null || sessionUser === undefined) {
       throw new InvalidSessionError()
+    }
+
+    if (!sessionUser.role === role || !role.includes(sessionUser.role)) {
+      throw new InvalidAccessError()
     }
 
     next()
