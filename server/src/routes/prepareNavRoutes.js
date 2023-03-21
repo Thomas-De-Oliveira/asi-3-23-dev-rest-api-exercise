@@ -3,7 +3,7 @@ import RelNavPageModel from "../db/models/RelNavPageModel.js"
 import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
 import auth from "../middlewares/auth.js"
-import { NotFoundError, InvalidAccessError } from "../error.js"
+import { NotFoundError } from "../error.js"
 import {
   stringValidator,
   idValidator,
@@ -16,11 +16,22 @@ const prepareNavRoutes = ({ app, db }) => {
     "/navigationPages",
     validate({}),
     mw(async (req, res) => {
-      const navigation = await NavigationModel.query()
-        .select("navigation.name", "pages.title", "pages.slug")
+      const {
+        session: { user: sessionUser },
+      } = req
+
+      let navigation
+
+      const query = NavigationModel.query()
+        .select("navigation.name", "pages.title", "pages.slug", "pages.status")
         .innerJoin("rel_nav_pages", "navigation.id", "rel_nav_pages.navId")
         .innerJoin("pages", "rel_nav_pages.pageId", "pages.id")
         .orderBy("navigation.name")
+
+      navigation =
+        sessionUser === null
+          ? await query.where({ status: "published" })
+          : await query
 
       if (!navigation) {
         throw new NotFoundError()
@@ -43,14 +54,12 @@ const prepareNavRoutes = ({ app, db }) => {
             })
       )
 
-      
-
       res.send({ result: tableNav })
     })
   ),
     app.get(
       "/navigation",
-      auth,
+      auth(["admin", "manager"]),
       validate({
         query: {
           limit: limitValidator,
@@ -62,15 +71,13 @@ const prepareNavRoutes = ({ app, db }) => {
           data: {
             query: { limit, page },
           },
-          session: { user: sessionUser },
         } = req
 
-        if (sessionUser.role === "editor") {
-          throw new InvalidAccessError()
-        }
-
-        const navigation = await NavigationModel.query()
-        .modify("paginate", limit, page)
+        const navigation = await NavigationModel.query().modify(
+          "paginate",
+          limit,
+          page
+        )
 
         if (!navigation) {
           throw new NotFoundError()
@@ -81,7 +88,7 @@ const prepareNavRoutes = ({ app, db }) => {
     ),
     app.get(
       "/nav/:navId",
-      auth,
+      auth(["admin", "manager"]),
       validate({
         params: {
           navId: idValidator.required(),
@@ -92,12 +99,7 @@ const prepareNavRoutes = ({ app, db }) => {
           data: {
             params: { navId },
           },
-          session: { user: sessionUser },
         } = req
-
-        if (sessionUser.role === "editor") {
-          throw new InvalidAccessError()
-        }
 
         const navigation = await NavigationModel.query().where({ id: navId })
 
@@ -110,7 +112,7 @@ const prepareNavRoutes = ({ app, db }) => {
     ),
     app.post(
       "/createNav",
-      auth,
+      auth(["admin", "manager"]),
       validate({
         body: {
           name: stringValidator,
@@ -121,12 +123,7 @@ const prepareNavRoutes = ({ app, db }) => {
           data: {
             body: { name },
           },
-          session: { user: sessionUser },
         } = req
-
-        if (sessionUser.role === "editor") {
-          throw new InvalidAccessError()
-        }
 
         const navigation = await NavigationModel.query().findOne({ name })
 
@@ -143,7 +140,7 @@ const prepareNavRoutes = ({ app, db }) => {
     ),
     app.patch(
       "/nav/:navId",
-      auth,
+      auth(["admin", "manager"]),
       validate({
         body: {
           name: stringValidator,
@@ -158,12 +155,7 @@ const prepareNavRoutes = ({ app, db }) => {
             body: { name },
             params: { navId },
           },
-          session: { user: sessionUser },
         } = req
-
-        if (sessionUser.role === "editor") {
-          throw new InvalidAccessError()
-        }
 
         const navigation = await NavigationModel.query().where({ id: navId })
 
@@ -183,7 +175,7 @@ const prepareNavRoutes = ({ app, db }) => {
     ),
     app.delete(
       "/nav/:navId",
-      auth,
+      auth(["admin", "manager"]),
       validate({
         params: { navId: idValidator.required() },
       }),
@@ -192,12 +184,7 @@ const prepareNavRoutes = ({ app, db }) => {
           data: {
             params: { navId },
           },
-          session: { user: sessionUser },
         } = req
-
-        if (sessionUser.role === "editor") {
-          throw new InvalidAccessError()
-        }
 
         const navigation = await NavigationModel.query().where({ id: navId })
 

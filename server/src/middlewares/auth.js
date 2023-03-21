@@ -1,30 +1,17 @@
-import jsonwebtoken from "jsonwebtoken"
-import config from "../config.js"
 import { InvalidSessionError } from "../error.js"
 import mw from "./mw.js"
 
-const auth = mw(async (req, res, next) => {
-  const { authorization } = req.headers
+const auth = (role) =>
+  mw(async (req, res, next) => {
+    const {
+      session: { user: sessionUser },
+    } = req
 
-  if (!authorization) {
-    throw new InvalidSessionError()
-  }
-
-  try {
-    const { payload } = jsonwebtoken.verify(
-      authorization.slice(7),
-      config.security.jwt.secret
-    )
-    req.session = payload
-  } catch (err) {
-    if (err instanceof jsonwebtoken.JsonWebTokenError) {
+    if (!sessionUser.role === role || !role.includes(sessionUser.role)) {
       throw new InvalidSessionError()
     }
 
-    throw err
-  }
-
-  next()
-})
+    next()
+  })
 
 export default auth

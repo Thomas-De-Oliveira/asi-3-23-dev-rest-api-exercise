@@ -12,7 +12,7 @@ import {
   stringValidator,
   idValidator,
   pageValidator,
-  limitValidator
+  limitValidator,
 } from "../validators.js"
 
 const prepareUsersRoutes = ({ app, db }) => {
@@ -27,7 +27,8 @@ const prepareUsersRoutes = ({ app, db }) => {
   }
 
   app.post(
-    "/:nameRole/createUser",
+    "/createUser",
+    auth("admin"),
     validate({
       params: {
         nameRole: stringValidator,
@@ -41,44 +42,34 @@ const prepareUsersRoutes = ({ app, db }) => {
       },
     }),
     mw(async (req, res) => {
-      const { nameRole } = req.data.params
       const { email, password, firstName, lastName, roleId } = req.data.body
 
-      if (nameRole === "admin") {
-        const user = await UserModel.query().findOne({ email })
+      const user = await UserModel.query().findOne({ email })
 
-        if (user) {
-          res.send({ result: "OK" })
-
-          return
-        }
-
-        const [passwordHash, passwordSalt] = await hashPassword(password)
-
-        await db("users").insert({
-          firstName,
-          lastName,
-          email,
-          passwordHash,
-          passwordSalt,
-          roleId,
-        })
-
+      if (user) {
         res.send({ result: "OK" })
-      } else {
-        res.send({ result: "You are not admin" })
 
         return
       }
+
+      const [passwordHash, passwordSalt] = await hashPassword(password)
+
+      await db("users").insert({
+        firstName,
+        lastName,
+        email,
+        passwordHash,
+        passwordSalt,
+        roleId,
+      })
+
+      res.send({ result: "OK" })
     })
   )
   app.get(
-    "/:nameRole/users",
-    auth,
+    "/users",
+    auth("admin"),
     validate({
-      params: {
-        nameRole: stringValidator.required(),
-      },
       query: {
         limit: limitValidator,
         page: pageValidator,
@@ -88,35 +79,26 @@ const prepareUsersRoutes = ({ app, db }) => {
       const {
         data: {
           query: { limit, page },
-          params: {nameRole}
         },
       } = req
+      const users = await UserModel.query()
+        .select(
+          "users.id",
+          "users.firstName",
+          "users.lastName",
+          "users.email",
+          "roles.name as role"
+        )
+        .innerJoin("roles", "users.roleId", "roles.id")
+        .modify("paginate", limit, page)
 
-      if (nameRole === "admin") {
-        const users = await UserModel.query()
-          .select(
-            "users.id",
-            "users.firstName",
-            "users.lastName",
-            "users.email",
-            "roles.name as role"
-          )
-          .innerJoin("roles", "users.roleId", "roles.id")
-          .modify("paginate", limit, page)
-
-
-        if (!users) {
-          res.send({ result: "OK" })
-
-          return
-        }
-
-        res.send({ result: users })
-      } else {
-        res.send({ result: "You are not admin" })
+      if (!users) {
+        res.send({ result: "OK" })
 
         return
       }
+
+      res.send({ result: users })
     })
   ),
     app.get(
@@ -147,7 +129,7 @@ const prepareUsersRoutes = ({ app, db }) => {
     ),
     app.patch(
       "/users/:userId",
-      auth,
+      auth(["admin", "editor", "manager"]),
       validate({
         params: { userId: idValidator.required() },
         body: {
@@ -166,7 +148,10 @@ const prepareUsersRoutes = ({ app, db }) => {
           session: { user: sessionUser },
         } = req
 
-        if (userId !== sessionUser.id && sessionUser.role !== "admin") {
+        if (
+          userId !== sessionUser.id &&
+          (sessionUser.role === "manager" || sessionUser.role === "editor")
+        ) {
           throw new InvalidAccessError()
         }
 
@@ -188,7 +173,7 @@ const prepareUsersRoutes = ({ app, db }) => {
     ),
     app.delete(
       "/users/:userId",
-      auth,
+      auth("admin"),
       validate({
         params: { userId: idValidator.required() },
       }),
@@ -197,12 +182,7 @@ const prepareUsersRoutes = ({ app, db }) => {
           data: {
             params: { userId },
           },
-          session: { user: sessionUser },
         } = req
-
-        if (sessionUser.role !== "admin") {
-          throw new InvalidAccessError()
-        }
 
         const user = await checkIfUserExists(userId, res)
 
