@@ -38,7 +38,7 @@ const CreateNavPage = (props) => {
   )
 
   return (
-    <Page title="Create a user">
+    <Page title="Create a Menu" token={token}>
       <NavForm onSubmit={handleSubmit} />
     </Page>
   )

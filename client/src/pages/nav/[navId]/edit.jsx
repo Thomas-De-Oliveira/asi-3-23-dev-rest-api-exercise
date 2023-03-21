@@ -60,7 +60,7 @@ const EditNavPage = (props) => {
   }
 
   return (
-    <Page title={`Editing user #${navId}`}>
+    <Page title={`Editing user #${navId}`} token={token}>
       <NavForm onSubmit={handleSubmit} initialValues={navigation[0]} />
     </Page>
   )

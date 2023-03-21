@@ -2,9 +2,9 @@ import config from "@/config.js"
 
 const apiRoutes = {
   users: {
-    create: (nameRole) => `${config.api.baseURL}/${nameRole}/createUser`,
+    create: () => `${config.api.baseURL}/createUser`,
     read: {
-      collection: (nameRole) => `${config.api.baseURL}/${nameRole}/users`,
+      collection: () => `${config.api.baseURL}/users`,
       single: (userId) => `${config.api.baseURL}/users/${userId}`,
     },
     update: (userId) => `${config.api.baseURL}/users/${userId}`,

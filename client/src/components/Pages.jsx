@@ -12,7 +12,7 @@ import axios from "axios"
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons"
 
 const Page = (props) => {
-  const { title, children, classNames } = props
+  const { title, children, classNames, token } = props
   const router = useRouter()
 
   const {
@@ -25,11 +25,16 @@ const Page = (props) => {
     ;(async () => {
       const {
         data: { result },
-      } = await axios(apiRoutes.nav.read.collectionWithPages())
+      } =
+        token !== undefined && token !== null
+          ? await axios(apiRoutes.nav.read.collectionWithPages(), {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          : await axios(apiRoutes.nav.read.collectionWithPages())
 
       setNav(result)
     })()
-  }, [])
+  }, [token])
 
   const { signOut } = useContext(AppContext)
 
@@ -50,10 +55,10 @@ const Page = (props) => {
       <Head>
         <title>{title}</title>
       </Head>
-      <header className="flex p-4 border-b bg-slate-400 sticky items-center">
-        <nav className="flex items-center">
-          <h1>Exercice Node</h1>
-          <div className="flex items-center ml-auto transition-all transition-duration-200 ">
+      <header className="flex p-4 border-b bg-slate-400 sticky items-center justify-end">
+        <nav className="flex items-center w-full">
+          <h1 className="pl-8 text-xl font-semibold">Exercice Node</h1>
+          <div className="flex items-center ml-auto transition-all transition-duration-200 pr-8">
             <button
               className={`px-2 py-1 z-10 transition duration-200 ease-in-out transform ${
                 isOpen ? "rotate-90" : "rotate-0"
@@ -77,17 +82,22 @@ const Page = (props) => {
               <Link
                 href={routes.home()}
                 onClick={handleIsOpenClick}
-                className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
               >
                 {" "}
                 Accueil
               </Link>
               {navigation.map((nav, index) => (
                 <div key={index} className="group">
-                  <h1 className="text-lg font-semibold">{nav.name}</h1>
+                  <h1 className="text-lg font-semibold px-4 py-2">
+                    {nav.name}
+                  </h1>
                   <div className="hidden group-hover:block hover:block">
                     {nav.pages.map((page, index) => (
-                      <li key={index} className="text-sm text-gray-600 my-2.5">
+                      <li
+                        key={index}
+                        className="list-none text-sm text-gray-600 my-2.5"
+                      >
                         <Link
                           href={routes.pages.read.contentPage(page.slug)}
                           onClick={handleIsOpenClick}
@@ -107,7 +117,7 @@ const Page = (props) => {
                 <Link
                   href={routes.sign.in()}
                   onClick={handleIsOpenClick}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Me Connecter
@@ -118,23 +128,15 @@ const Page = (props) => {
                 <Link
                   href={routes.users.read.collection(session.user.role)}
                   onClick={handleIsOpenClick}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Utilisateurs
                 </Link>
                 <Link
-                  href={routes.users.create(session.user.role)}
-                  onClick={handleIsOpenClick}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  {" "}
-                  Ajout utilisateur
-                </Link>
-                <Link
                   href={routes.nav.read.collection(session.user.role)}
                   onClick={handleIsOpenClick}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Controle Navbar
@@ -142,7 +144,7 @@ const Page = (props) => {
                 <Link
                   href={routes.pages.read.collection()}
                   onClick={handleIsOpenClick}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Controle Pages
@@ -150,7 +152,7 @@ const Page = (props) => {
                 <Link
                   href={"/"}
                   onClick={handleSignOut}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Déconnexion
@@ -161,7 +163,7 @@ const Page = (props) => {
                 <Link
                   href={routes.users.read.single(session.user.id)}
                   onClick={handleIsOpenClick}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Mon compte
@@ -169,7 +171,7 @@ const Page = (props) => {
                 <Link
                   href={"/"}
                   onClick={handleSignOut}
-                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >
                   {" "}
                   Déconnexion
@@ -179,7 +181,9 @@ const Page = (props) => {
           </div>
         </nav>
       </header>
-      <section className={clsx("flex flex-col", classNames)}>
+      <section
+        className={clsx("flex flex-col bg-slate-200 h-screen", classNames)}
+      >
         {children}
       </section>
     </main>

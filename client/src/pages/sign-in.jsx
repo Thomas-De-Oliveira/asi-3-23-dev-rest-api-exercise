@@ -32,7 +32,7 @@ const SignInPage = () => {
   )
 
   return (
-    <Page>
+    <Page title="Connexion" token={undefined}>
       <Formik
         onSubmit={handleSubmit}
         initialValues={initialValues}

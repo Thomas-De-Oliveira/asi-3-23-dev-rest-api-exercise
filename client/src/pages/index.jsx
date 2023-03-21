@@ -1,7 +1,27 @@
 import Page from "@/components/Pages.jsx"
+import cookie from "cookie"
 
-const IndexPage = () => {
-  return <Page>Welcome~!</Page>
+export const getServerSideProps = async ({ req }) => {
+  const { token } =
+    req.headers.cookie !== undefined
+      ? cookie.parse(req ? req.headers.cookie || "" : document.cookie)
+      : { token: null }
+
+  return {
+    props: {
+      token: token,
+    },
+  }
+}
+
+const IndexPage = (props) => {
+  const { token } = props
+
+  return (
+    <Page title="Accueil" token={token}>
+      Welcome~!
+    </Page>
+  )
 }
 
 IndexPage.isPublic = true

@@ -1,6 +1,6 @@
-import apiRoutes from "../../apiRoutes.js"
-import NavList from "../../components/business/NavList.jsx"
-import Page from "../../components/Pages.jsx"
+import apiRoutes from "@/apiRoutes.js"
+import NavList from "@/components/business/NavList.jsx"
+import Page from "@/components/Pages.jsx"
 import axios from "axios"
 import { useCallback, useState } from "react"
 import cookie from "cookie"
@@ -44,13 +44,11 @@ const NavPage = (props) => {
   )
 
   return (
-    <Page title="List of all nav title">
+    <Page title="List of all nav title" token={token}>
       <NavList navigation={navigation} deleteNav={deleteNav} />
-      <div className="mt-2">
-        <Button>
-          <Link href={routes.nav.create()}>Create NavBar title</Link>
-        </Button>
-      </div>
+      <Button className="m-10">
+        <Link href={routes.nav.create()}>Create NavBar title</Link>
+      </Button>
     </Page>
   )
 }

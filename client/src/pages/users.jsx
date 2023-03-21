@@ -1,16 +1,18 @@
-import apiRoutes from "../../apiRoutes.js"
-import UserList from "../../components/business/UserList.jsx"
-import Page from "../../components/Pages.jsx"
+import apiRoutes from "../apiRoutes.js"
+import UserList from "../components/business/UserList.jsx"
+import Page from "../components/Pages.jsx"
 import axios from "axios"
+import Button from "@/components/ui/Button.jsx"
+import Link from "next/link.js"
+import routes from "@/routes.js"
 import { useCallback, useState } from "react"
 import cookie from "cookie"
 
-export const getServerSideProps = async ({ req, params }) => {
+export const getServerSideProps = async ({ req }) => {
   const { token } = cookie.parse(
     req ? req.headers.cookie || "" : document.cookie
   )
-  const sessionRole = params.nameRole
-  const { data } = await axios(apiRoutes.users.read.collection(sessionRole), {
+  const { data } = await axios(apiRoutes.users.read.collection(), {
     headers: { Authorization: `Bearer ${token}` },
   })
 
@@ -42,8 +44,11 @@ const UsersPage = (props) => {
   )
 
   return (
-    <Page title="List of all users">
+    <Page title="List of all users" token={token}>
       <UserList users={users} deleteUser={deleteUser} />
+      <Button className="m-10">
+        <Link href={routes.users.create()}>Create User</Link>
+      </Button>
     </Page>
   )
 }

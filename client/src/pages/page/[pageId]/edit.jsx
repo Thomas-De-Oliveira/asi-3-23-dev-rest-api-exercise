@@ -18,7 +18,7 @@ export const getServerSideProps = async ({ req, params }) => {
 
   return {
     props: {
-        navigation: data,
+      navigation: data,
       pageId: pageId,
       token: token,
     },
@@ -26,7 +26,11 @@ export const getServerSideProps = async ({ req, params }) => {
 }
 
 const EditPage = (props) => {
-  const { navigation: {result},pageId, token } = props
+  const {
+    navigation: { result },
+    pageId,
+    token,
+  } = props
 
   const [page, setPage] = useState(null)
   const handleSubmit = useCallback(
@@ -40,7 +44,7 @@ const EditPage = (props) => {
           content,
           slug,
           status,
-          navId
+          navId,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -69,8 +73,12 @@ const EditPage = (props) => {
   }
 
   return (
-    <Page title={`Editing page #${pageId}`}>
-      <PageForm onSubmit={handleSubmit} initialValues={page[0]} navigation={result}/>
+    <Page title={`Editing page #${pageId}`} token={token}>
+      <PageForm
+        onSubmit={handleSubmit}
+        initialValues={page[0]}
+        navigation={result}
+      />
     </Page>
   )
 }

@@ -1,17 +1,17 @@
 const routes = {
   home: () => "/",
   users: {
-    create: (nameRole) => `/${nameRole}/createUser`,
+    create: () => `/createUser`,
     read: {
-      collection: (nameRole) => `/${nameRole}/users`,
+      collection: () => `/users`,
       single: (userId) => `/users/${userId}`,
     },
     update: (userId) => `/users/${userId}/edit`,
   },
   nav: {
-    create: (nameRole) => `/${nameRole}/createNav`,
+    create: () => `/createNav`,
     read: {
-      collection: (nameRole) => `/${nameRole}/nav`,
+      collection: () => `/nav`,
       single: (navId) => `/nav/${navId}`,
     },
     update: (navId) => `/nav/${navId}/edit`,

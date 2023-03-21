@@ -34,13 +34,20 @@ const NavList = (props) => {
         {navigation.map((nav) => (
           <tr key={nav.id}>
             {itemKeys.map((itemKey) => (
-              <TableCell key={itemKey}>{nav[itemKey]}</TableCell>
+              <TableCell key={itemKey}>
+                <div className="flex justify-center">{nav[itemKey]}</div>
+              </TableCell>
             ))}
             <TableCell>
-              <Link href={routes.nav.update(nav.id)}>Edit</Link>
+              <Link
+                href={routes.nav.update(nav.id)}
+                className="flex justify-center"
+              >
+                Edit
+              </Link>
             </TableCell>
             <TableCell>
-              <div className="flex ">
+              <div className="flex justify-center">
                 <button data-user-id={nav.id} onClick={handleClickDelete}>
                   DELETE
                 </button>

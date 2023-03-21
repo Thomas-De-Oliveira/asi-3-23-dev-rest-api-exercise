@@ -12,7 +12,7 @@ export const getServerSideProps = async ({ req }) => {
   const { token } = cookie.parse(
     req ? req.headers.cookie || "" : document.cookie
   )
-  
+
   const { data } = await axios(apiRoutes.pages.read.collection(), {
     headers: { Authorization: `Bearer ${token}` },
   })
@@ -45,13 +45,11 @@ const NavPage = (props) => {
   )
 
   return (
-    <Page title="List of all users">
+    <Page title="List of all users" token={token}>
       <PageList pages={pages} deletePage={deletePage} />
-      <div className="mt-2">
-        <Button>
-          <Link href={routes.pages.create()}>Create Page</Link>
-        </Button>
-      </div>
+      <Button className="m-10">
+        <Link href={routes.pages.create()}>Create Page</Link>
+      </Button>
     </Page>
   )
 }

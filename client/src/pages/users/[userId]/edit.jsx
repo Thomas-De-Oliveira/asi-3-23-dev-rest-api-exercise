@@ -67,7 +67,7 @@ const EditUserPage = (props) => {
   }
 
   return (
-    <Page title={`Editing user #${userId}`}>
+    <Page title={`Editing user #${userId}`} token={token}>
       <UserFormEdit
         onSubmit={handleSubmit}
         initialValues={user[0]}
