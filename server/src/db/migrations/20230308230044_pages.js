@@ -6,7 +6,7 @@ export const up = async (knex) => {
     table.text("slug").notNullable().unique()
     table.timestamps(true, true, true)
     table.text("status").notNullable()
-    table.integer("creator").references("id").inTable("users").notNullable()
+    table.integer("creator").references("id").inTable("users")
   })
 
   await knex.schema.createTable("rel_page_user", (table) => {

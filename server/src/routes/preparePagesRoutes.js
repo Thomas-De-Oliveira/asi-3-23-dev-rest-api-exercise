@@ -70,14 +70,12 @@ const preparePagesRoutes = ({ app, db }) => {
         } = req
 
         const query = PageModel.query()
-          .innerJoin("users", "pages.creator", "=", "users.id")
           .select(
             "pages.id",
             "pages.title",
             "pages.content",
             "pages.slug",
-            "pages.status",
-            "users.firstName"
+            "pages.status"
           )
           .modify("paginate", limit, page)
 

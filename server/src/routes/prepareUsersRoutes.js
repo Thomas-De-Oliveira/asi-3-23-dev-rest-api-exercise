@@ -213,6 +213,7 @@ const prepareUsersRoutes = ({ app, db }) => {
           return
         }
 
+        await db("pages").update({ creator: null }).where({ creator: userId })
         await db("rel_page_user").delete().where({ userId: userId })
 
         await UserModel.query().deleteById(userId)
