@@ -3,8 +3,8 @@ import routes from "@/routes.js"
 import Link from "next/link.js"
 import { useCallback } from "react"
 
-const headers = ["Title", "Content", "Slug", "Status", "First Name"]
-const itemKeys = ["title", "content", "slug", "status", "firstName"]
+const headers = ["Title", "Content", "Slug", "Status"]
+const itemKeys = ["title", "content", "slug", "status"]
 
 const PageList = (props) => {
   const { pages, deletePage } = props
