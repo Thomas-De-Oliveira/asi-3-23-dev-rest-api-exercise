@@ -47,7 +47,12 @@ const NavPage = (props) => {
     <Page title="List of all nav title" token={token}>
       <NavList navigation={navigation} deleteNav={deleteNav} />
       <Button className="m-10">
-        <Link href={routes.nav.create()}>Create NavBar title</Link>
+        <Link
+          href={routes.nav.create()}
+          className="px-4 py-4 w-full h-full block"
+        >
+          Create NavBar title
+        </Link>
       </Button>
     </Page>
   )

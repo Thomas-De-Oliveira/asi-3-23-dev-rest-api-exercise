@@ -56,11 +56,13 @@ const EditUserPage = (props) => {
     ;(async () => {
       const {
         data: { result },
-      } = await axios(apiRoutes.users.read.single(userId))
+      } = await axios(apiRoutes.users.read.single(userId), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
       setUser(formatUser(result))
     })()
-  }, [userId])
+  }, [userId, token])
 
   if (!user) {
     return "Loading..."

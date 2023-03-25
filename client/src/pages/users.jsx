@@ -47,7 +47,12 @@ const UsersPage = (props) => {
     <Page title="List of all users" token={token}>
       <UserList users={users} deleteUser={deleteUser} />
       <Button className="m-10">
-        <Link href={routes.users.create()}>Create User</Link>
+        <Link
+          href={routes.users.create()}
+          className="px-4 py-4 w-full h-full block"
+        >
+          Create User
+        </Link>
       </Button>
     </Page>
   )

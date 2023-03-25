@@ -9,11 +9,7 @@ const Button = (props) => {
 
   return (
     <button
-      className={clsx(
-        "px-4 py-4 rounded-lg text-lg",
-        variants[variant],
-        className
-      )}
+      className={clsx("rounded-lg text-lg", variants[variant], className)}
       {...otherProps}
     ></button>
   )

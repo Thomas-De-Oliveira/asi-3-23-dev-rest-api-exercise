@@ -158,10 +158,45 @@ const Page = (props) => {
                   Déconnexion
                 </Link>
               </div>
+            ) : session.user.role === "manager" ? (
+              <div className="flex flex-col items-center">
+                <Link
+                  href={routes.nav.read.collection(session.user.role)}
+                  onClick={handleIsOpenClick}
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {" "}
+                  Controle Navbar
+                </Link>
+                <Link
+                  href={routes.pages.read.collection()}
+                  onClick={handleIsOpenClick}
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {" "}
+                  Controle Pages
+                </Link>
+                <Link
+                  href={routes.users.update(session.user.id)}
+                  onClick={handleIsOpenClick}
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {" "}
+                  Mon compte
+                </Link>
+                <Link
+                  href={"/"}
+                  onClick={handleSignOut}
+                  className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  {" "}
+                  Déconnexion
+                </Link>
+              </div>
             ) : (
               <div className="flex flex-col items-center">
                 <Link
-                  href={routes.users.read.single(session.user.id)}
+                  href={routes.users.update(session.user.id)}
                   onClick={handleIsOpenClick}
                   className="block px-4 py-2 text-lg font-medium text-gray-700 hover:bg-gray-100"
                 >

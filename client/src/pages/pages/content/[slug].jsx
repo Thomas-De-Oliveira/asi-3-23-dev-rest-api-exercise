@@ -8,12 +8,20 @@ import routes from "@/routes"
 
 export const getServerSideProps = async ({ req, params }) => {
   const slug = params.slug
-  const token = cookie.parse(req ? req.headers.cookie || "" : document.cookie)
-  const { data } = await axios(apiRoutes.pages.read.contentPage(slug))
+  const { token } =
+    req.headers.cookie !== undefined
+      ? cookie.parse(req ? req.headers.cookie || "" : document.cookie)
+      : { token: null }
+  const { data } =
+    token !== null
+      ? await axios(apiRoutes.pages.read.contentPage(slug), {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      : await axios(apiRoutes.pages.read.contentPage(slug))
 
   return {
     props: {
-      pages: data,
+      page: data,
       token: token,
     },
   }
@@ -21,8 +29,8 @@ export const getServerSideProps = async ({ req, params }) => {
 
 const ContentPage = (props) => {
   const {
-    pages: { result },
-    token: { token },
+    page: { result },
+    token,
   } = props
 
   return (
@@ -32,7 +40,10 @@ const ContentPage = (props) => {
           <h1 className="font-semibold text-2xl">{page.title}</h1>
           <p className="pt-10 text-xl">{page.content}</p>
           <Button className="mt-10" hidden={token !== undefined ? false : true}>
-            <Link href={routes.pages.updateContent(page.id)}>
+            <Link
+              className="px-4 py-4 w-full h-full block"
+              href={routes.pages.updateContent(page.id)}
+            >
               Mettre a jour le contenu de la page
             </Link>
           </Button>
