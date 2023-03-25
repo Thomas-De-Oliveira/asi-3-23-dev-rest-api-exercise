@@ -1,7 +1,6 @@
 import BaseModel from "./BaseModel.js"
 import PageModel from "./PageModel.js"
 import RoleModel from "./RoleModel.js"
-import RelPageUserModel from "./RelPageUserModel.js"
 import hashPassword from "../hashPassword.js"
 
 class UserModel extends BaseModel {
@@ -32,10 +31,14 @@ class UserModel extends BaseModel {
       },
       rel_user_page: {
         relation: BaseModel.HasManyRelation,
-        modelClass: RelPageUserModel,
+        modelClass: PageModel,
         join: {
           from: "users.id",
-          to: "rel_page_user.userId",
+          through: {
+            from: "rel_page_user.userId",
+            to: "rel_page_user.pageId",
+          },
+          to: "pages.id",
         },
       },
     }

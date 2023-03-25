@@ -11,7 +11,7 @@ const auth = (role) =>
       throw new InvalidSessionError()
     }
 
-    if (!sessionUser.role === role || !role.includes(sessionUser.role)) {
+    if (sessionUser.role !== role && !role.includes(sessionUser.role)) {
       throw new InvalidAccessError()
     }
 

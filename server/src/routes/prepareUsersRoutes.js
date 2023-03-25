@@ -9,10 +9,11 @@ import { NotFoundError, InvalidAccessError } from "../error.js"
 import {
   emailValidator,
   passwordValidator,
-  stringValidator,
   idValidator,
   pageValidator,
   limitValidator,
+  firstNameValidator,
+  lastNameValidator,
 } from "../validators.js"
 
 const prepareUsersRoutes = ({ app, db }) => {
@@ -30,12 +31,9 @@ const prepareUsersRoutes = ({ app, db }) => {
     "/createUser",
     auth("admin"),
     validate({
-      params: {
-        nameRole: stringValidator,
-      },
       body: {
-        firstName: stringValidator.required(),
-        lastName: stringValidator.required(),
+        firstName: firstNameValidator.required(),
+        lastName: lastNameValidator.required(),
         email: emailValidator.required(),
         password: passwordValidator.required(),
         roleId: idValidator.required(),
@@ -81,7 +79,7 @@ const prepareUsersRoutes = ({ app, db }) => {
           query: { limit, page },
         },
       } = req
-      const users = await UserModel.query()
+      const query = UserModel.query()
         .select(
           "users.id",
           "users.firstName",
@@ -89,16 +87,24 @@ const prepareUsersRoutes = ({ app, db }) => {
           "users.email",
           "roles.name as role"
         )
-        .innerJoin("roles", "users.roleId", "roles.id")
         .modify("paginate", limit, page)
 
+      const [countResult] = await query
+        .clone()
+        .clearSelect()
+        .limit(1)
+        .offset(0)
+        .count()
+      const count = Number.parseInt(countResult.count, 10)
+      const users = await query.innerJoin("roles", "users.roleId", "roles.id")
+
       if (!users) {
-        res.send({ result: "OK" })
+        res.send({ result: users })
 
         return
       }
 
-      res.send({ result: users })
+      res.send({ result: users, meta: { count } })
     })
   ),
     app.get(
@@ -110,8 +116,15 @@ const prepareUsersRoutes = ({ app, db }) => {
       }),
       mw(async (req, res) => {
         const { userId } = req.data.params
-        const user = await db("users")
-          .where({ id: userId })
+        const {
+          session: { user: sessionUser },
+        } = req
+
+        if (userId !== sessionUser.id && sessionUser.role !== "admin") {
+          throw new InvalidAccessError()
+        }
+
+        const query = UserModel.query()
           .select(
             "users.id",
             "users.firstName",
@@ -119,12 +132,21 @@ const prepareUsersRoutes = ({ app, db }) => {
             "users.email",
             "users.roleId"
           )
+          .where({ id: userId })
+        const [countResult] = await query
+          .clone()
+          .clearSelect()
+          .limit(1)
+          .offset(0)
+          .count()
+        const count = Number.parseInt(countResult.count, 10)
+        const user = await query
 
         if (!user) {
           throw new NotFoundError()
         }
 
-        res.send({ result: sanitizeUser(user) })
+        res.send({ result: sanitizeUser(user), meta: { count } })
       })
     ),
     app.patch(
@@ -133,8 +155,8 @@ const prepareUsersRoutes = ({ app, db }) => {
       validate({
         params: { userId: idValidator.required() },
         body: {
-          firstName: stringValidator,
-          lastName: stringValidator,
+          firstName: firstNameValidator,
+          lastName: lastNameValidator,
           email: emailValidator,
           roleId: idValidator,
         },
@@ -148,10 +170,7 @@ const prepareUsersRoutes = ({ app, db }) => {
           session: { user: sessionUser },
         } = req
 
-        if (
-          userId !== sessionUser.id &&
-          (sessionUser.role === "manager" || sessionUser.role === "editor")
-        ) {
+        if (userId !== sessionUser.id && sessionUser.role !== "admin") {
           throw new InvalidAccessError()
         }
 
@@ -168,12 +187,11 @@ const prepareUsersRoutes = ({ app, db }) => {
           ...(roleId ? { roleId } : {}),
         })
 
-        res.send({ result: sanitizeUser(updatedUser) })
+        res.send({ result: sanitizeUser(updatedUser), msg: "update success" })
       })
     ),
     app.delete(
       "/users/:userId",
-      auth("admin"),
       validate({
         params: { userId: idValidator.required() },
       }),
@@ -182,13 +200,20 @@ const prepareUsersRoutes = ({ app, db }) => {
           data: {
             params: { userId },
           },
+          session: { user: sessionUser },
         } = req
+
+        if (userId !== sessionUser.id && sessionUser.role !== "admin") {
+          throw new InvalidAccessError()
+        }
 
         const user = await checkIfUserExists(userId, res)
 
         if (!user) {
           return
         }
+
+        await db("rel_page_user").delete().where({ userId: userId })
 
         await UserModel.query().deleteById(userId)
 

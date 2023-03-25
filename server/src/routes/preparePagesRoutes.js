@@ -1,13 +1,15 @@
-import RelNavPageModel from "../db/models/RelNavPageModel.js"
 import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
 import auth from "../middlewares/auth.js"
-import { NotFoundError } from "../error.js"
+import { InvalidAccessError, NotFoundError } from "../error.js"
 import {
-  stringValidator,
   idValidator,
   limitValidator,
   pageValidator,
+  slugValidator,
+  contentValidator,
+  titleValidator,
+  statusValidator,
 } from "../validators.js"
 import PageModel from "../db/models/PageModel.js"
 
@@ -16,7 +18,7 @@ const preparePagesRoutes = ({ app, db }) => {
     "/pages/:slug",
     validate({
       params: {
-        slug: stringValidator,
+        slug: slugValidator,
       },
     }),
     mw(async (req, res) => {
@@ -24,15 +26,31 @@ const preparePagesRoutes = ({ app, db }) => {
         data: {
           params: { slug },
         },
+        session: { user: sessionUser },
       } = req
 
-      const page = await PageModel.query().where({ slug: slug })
+      const query = PageModel.query().where({ slug: slug })
+      const [countResult] = await query.clone().limit(1).offset(0).count()
+      const count = Number.parseInt(countResult.count, 10)
+      const page = await query
+
+      let status
+      page.map((p) => (status = p.status))
+
+      if (status !== "published" && sessionUser === null) {
+        throw new InvalidAccessError()
+      }
 
       if (!page) {
         throw new NotFoundError()
       }
 
-      res.send({ result: page })
+      res.send({
+        result: page,
+        meta: {
+          count,
+        },
+      })
     })
   ),
     app.get(
@@ -51,7 +69,7 @@ const preparePagesRoutes = ({ app, db }) => {
           },
         } = req
 
-        const pages = await PageModel.query()
+        const query = PageModel.query()
           .innerJoin("users", "pages.creator", "=", "users.id")
           .select(
             "pages.id",
@@ -63,11 +81,20 @@ const preparePagesRoutes = ({ app, db }) => {
           )
           .modify("paginate", limit, page)
 
+        const [countResult] = await query
+          .clone()
+          .clearSelect()
+          .limit(1)
+          .offset(0)
+          .count()
+        const count = Number.parseInt(countResult.count, 10)
+        const pages = await query
+
         if (!pages) {
           throw new NotFoundError()
         }
 
-        res.send({ result: pages })
+        res.send({ result: pages, meta: { count } })
       })
     ),
     app.get(
@@ -85,13 +112,16 @@ const preparePagesRoutes = ({ app, db }) => {
           },
         } = req
 
-        const page = await PageModel.query().where({ id: pageId })
+        const query = PageModel.query().where({ id: pageId })
+        const [countResult] = await query.clone().limit(1).offset(0).count()
+        const count = Number.parseInt(countResult.count, 10)
+        const page = await query
 
         if (!page) {
           throw new NotFoundError()
         }
 
-        res.send({ result: page })
+        res.send({ result: page, meta: { count } })
       })
     ),
     app.post(
@@ -99,11 +129,11 @@ const preparePagesRoutes = ({ app, db }) => {
       auth(["admin", "manager"]),
       validate({
         body: {
-          title: stringValidator,
-          content: stringValidator,
-          slug: stringValidator,
-          status: stringValidator,
-          navId: idValidator,
+          title: titleValidator.required(),
+          content: contentValidator.required(),
+          slug: slugValidator.required(),
+          status: statusValidator.required(),
+          navId: idValidator.required(),
         },
       }),
       mw(async (req, res) => {
@@ -114,7 +144,7 @@ const preparePagesRoutes = ({ app, db }) => {
           session: { user: sessionUser },
         } = req
 
-        const page = await PageModel.query().findOne({ title })
+        const page = await PageModel.query().findOne({ slug })
 
         if (page) {
           throw new NotFoundError()
@@ -141,7 +171,7 @@ const preparePagesRoutes = ({ app, db }) => {
           navId,
         })
 
-        res.send({ result: page })
+        res.send({ result: page, msg: "creation success" })
       })
     ),
     app.patch(
@@ -149,10 +179,10 @@ const preparePagesRoutes = ({ app, db }) => {
       auth(["admin", "manager"]),
       validate({
         body: {
-          title: stringValidator,
-          content: stringValidator,
-          slug: stringValidator,
-          status: stringValidator,
+          title: titleValidator,
+          content: contentValidator,
+          slug: slugValidator,
+          status: statusValidator,
           navId: idValidator,
         },
         params: {
@@ -165,6 +195,7 @@ const preparePagesRoutes = ({ app, db }) => {
             body: { title, content, slug, status, navId },
             params: { pageId },
           },
+          session: { user: sessionUser },
         } = req
 
         const page = await PageModel.query().where({ id: pageId })
@@ -180,21 +211,27 @@ const preparePagesRoutes = ({ app, db }) => {
           ...(status ? { status } : {}),
         })
 
-        await RelNavPageModel.query()
-          .updateAndFetch({
-            ...(navId ? { navId } : {}),
-          })
-          .where({ pageId: pageId })
+        const userId = sessionUser.id
 
-        res.send({ result: updatedPage })
+        await db("rel_page_user").insert({
+          pageId,
+          userId,
+        })
+
+        if (navId) {
+          await db("rel_nav_pages").where({ pageId: pageId }).update({
+            navId: navId,
+          })
+        }
+
+        res.send({ result: updatedPage, msg: "update success" })
       })
     ),
     app.patch(
       "/content/:pageId",
       validate({
         body: {
-          title: stringValidator,
-          content: stringValidator,
+          content: contentValidator,
         },
         params: {
           pageId: idValidator.required(),
@@ -206,6 +243,7 @@ const preparePagesRoutes = ({ app, db }) => {
             body: { title, content },
             params: { pageId },
           },
+          session: { user: sessionUser },
         } = req
 
         const page = await PageModel.query().where({ id: pageId })
@@ -219,7 +257,14 @@ const preparePagesRoutes = ({ app, db }) => {
           ...(content ? { content } : {}),
         })
 
-        res.send({ result: updatedPage })
+        const userId = sessionUser.id
+
+        await db("rel_page_user").insert({
+          pageId,
+          userId,
+        })
+
+        res.send({ result: updatedPage, msg: "update success" })
       })
     ),
     app.delete(
@@ -241,11 +286,12 @@ const preparePagesRoutes = ({ app, db }) => {
           throw new NotFoundError()
         }
 
-        await RelNavPageModel.query().delete().where({ pageId: pageId })
+        await db("rel_nav_pages").delete().where({ pageId: pageId })
+        await db("rel_page_user").delete().where({ pageId: pageId })
 
         await PageModel.query().deleteById(pageId)
 
-        res.send("page deleted")
+        res.send({ result: page, msg: "page deleted" })
       })
     )
 }

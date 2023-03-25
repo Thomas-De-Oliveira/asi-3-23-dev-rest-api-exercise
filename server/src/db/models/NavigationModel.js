@@ -1,5 +1,5 @@
 import BaseModel from "./BaseModel.js"
-import RelNavPageModel from "./RelNavPageModel.js"
+import PageModel from "./PageModel.js"
 
 class NavigationModel extends BaseModel {
   static tableName = "navigation"
@@ -9,14 +9,18 @@ class NavigationModel extends BaseModel {
       query.limit(limit).offset((page - 1) * limit),
   }
 
-  static relationMappings() {
+  static get relationMappings() {
     return {
-      rel_nav_page: {
-        relation: BaseModel.HasManyRelation,
-        modelClass: RelNavPageModel,
+      pages: {
+        relation: BaseModel.ManyToManyRelation,
+        modelClass: PageModel,
         join: {
           from: "navigation.id",
-          to: "rel_nav_page.navId",
+          through: {
+            from: "rel_nav_pages.navId",
+            to: "rel_nav_pages.pageId",
+          },
+          to: "pages.id",
         },
       },
     }

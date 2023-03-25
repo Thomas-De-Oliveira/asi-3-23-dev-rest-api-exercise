@@ -4,7 +4,7 @@ import { InvalidCredentialsError } from "../error.js"
 import hashPassword from "../db/hashPassword.js"
 import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
-import { emailValidator } from "../validators.js"
+import { emailValidator, passwordValidator } from "../validators.js"
 
 const prepareSignRoutes = ({ app, db }) => {
   app.post(
@@ -12,12 +12,19 @@ const prepareSignRoutes = ({ app, db }) => {
     validate({
       body: {
         email: emailValidator.required(),
+        password: passwordValidator.required(),
       },
     }),
     mw(async (req, res) => {
       const { email, password } = req.data.body
       const [user] = await db("users")
         .where({ email })
+        .select(
+          "users.id",
+          "users.passwordSalt",
+          "users.passwordHash",
+          "roles.name"
+        )
         .innerJoin("roles", "users.roleId", "roles.id")
 
       if (!user) {

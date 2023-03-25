@@ -1,17 +1,21 @@
 import BaseModel from "./BaseModel.js"
-import RelFormFieldModel from "./RelFormFieldModel.js"
+import FieldModel from "./FieldModel.js"
 
 class FormModel extends BaseModel {
   static tableName = "forms"
 
   static relationMappings() {
     return {
-      rel_form_field: {
+      fields: {
         relation: BaseModel.HasManyRelation,
-        modelClass: RelFormFieldModel,
+        modelClass: FieldModel,
         join: {
           from: "forms.id",
-          to: "rel_form_fields.formId",
+          through: {
+            from: "rel_form_fields.formId",
+            to: "rel_form_fields.fieldId",
+          },
+          to: "fields.id",
         },
       },
     }

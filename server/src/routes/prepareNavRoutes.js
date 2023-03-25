@@ -1,5 +1,4 @@
 import NavigationModel from "../db/models/NavigationModel.js"
-import RelNavPageModel from "../db/models/RelNavPageModel.js"
 import mw from "../middlewares/mw.js"
 import validate from "../middlewares/validate.js"
 import auth from "../middlewares/auth.js"
@@ -14,47 +13,38 @@ import {
 const prepareNavRoutes = ({ app, db }) => {
   app.get(
     "/navigationPages",
-    validate({}),
+    validate({
+      query: {
+        limit: limitValidator,
+        page: pageValidator,
+      },
+    }),
     mw(async (req, res) => {
       const {
+        query: { limit, page },
         session: { user: sessionUser },
       } = req
 
-      let navigation
+      const query = NavigationModel.query().orderBy("navigation.name")
+      const [countResult] = await query
+        .skipUndefined()
+        .clone()
+        .clearOrder()
+        .limit(1)
+        .offset(0)
+        .count()
+      const count = Number.parseInt(countResult.count, 10)
 
-      const query = NavigationModel.query()
-        .select("navigation.name", "pages.title", "pages.slug", "pages.status")
-        .innerJoin("rel_nav_pages", "navigation.id", "rel_nav_pages.navId")
-        .innerJoin("pages", "rel_nav_pages.pageId", "pages.id")
-        .orderBy("navigation.name")
-
-      navigation =
+      const navigation =
         sessionUser === null
-          ? await query.where({ status: "published" })
-          : await query
+          ? await query.withGraphJoined("pages").where({ status: "published" })
+          : await query.withGraphJoined("pages").modify("paginate", limit, page)
 
       if (!navigation) {
         throw new NotFoundError()
       }
 
-      const tableNav = []
-      navigation.map((nav) =>
-        tableNav.filter((table) => table.name === nav.name).length > 0
-          ? tableNav.map((table) =>
-              table.name === nav.name
-                ? table.pages.push({
-                    title: nav.title,
-                    slug: nav.slug,
-                  })
-                : ""
-            )
-          : tableNav.push({
-              name: nav.name,
-              pages: [{ title: nav.title, slug: nav.slug }],
-            })
-      )
-
-      res.send({ result: tableNav })
+      res.send({ result: navigation, meta: { count } })
     })
   ),
     app.get(
@@ -73,17 +63,16 @@ const prepareNavRoutes = ({ app, db }) => {
           },
         } = req
 
-        const navigation = await NavigationModel.query().modify(
-          "paginate",
-          limit,
-          page
-        )
+        const query = NavigationModel.query().modify("paginate", limit, page)
+        const [countResult] = await query.clone().limit(1).offset(0).count()
+        const count = Number.parseInt(countResult.count, 10)
+        const navigation = await query
 
         if (!navigation) {
           throw new NotFoundError()
         }
 
-        res.send({ result: navigation })
+        res.send({ result: navigation, meta: { count } })
       })
     ),
     app.get(
@@ -101,13 +90,16 @@ const prepareNavRoutes = ({ app, db }) => {
           },
         } = req
 
-        const navigation = await NavigationModel.query().where({ id: navId })
+        const query = NavigationModel.query().where({ id: navId })
+        const [countResult] = await query.clone().limit(1).offset(0).count()
+        const count = Number.parseInt(countResult.count, 10)
+        const navigation = await query
 
         if (!navigation) {
           throw new NotFoundError()
         }
 
-        res.send({ result: navigation })
+        res.send({ result: navigation, meta: { count } })
       })
     ),
     app.post(
@@ -135,7 +127,7 @@ const prepareNavRoutes = ({ app, db }) => {
           name,
         })
 
-        res.send({ result: navigation })
+        res.send({ result: navigation, msg: "create success" })
       })
     ),
     app.patch(
@@ -170,7 +162,7 @@ const prepareNavRoutes = ({ app, db }) => {
           }
         )
 
-        res.send({ result: updatedNav })
+        res.send({ result: updatedNav, msg: "update success" })
       })
     ),
     app.delete(
@@ -192,11 +184,11 @@ const prepareNavRoutes = ({ app, db }) => {
           throw new NotFoundError()
         }
 
-        await RelNavPageModel.query().delete().where({ navId: navId })
+        await db("rel_nav_pages").delete().where({ navId: navId })
 
         await NavigationModel.query().deleteById(navId)
 
-        res.send("nav deleted")
+        res.send({ result: navigation, msg: "nav deleted" })
       })
     )
 }

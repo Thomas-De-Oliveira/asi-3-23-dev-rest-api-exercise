@@ -1,7 +1,6 @@
 import BaseModel from "./BaseModel.js"
 import UserModel from "./UserModel.js"
-import RelPageUserModel from "./RelPageUserModel.js"
-import RelNavPageModel from "./RelNavPageModel.js"
+import NavigationModel from "./NavigationModel.js"
 
 class PageModel extends BaseModel {
   static tableName = "pages"
@@ -13,7 +12,7 @@ class PageModel extends BaseModel {
 
   static relationMappings() {
     return {
-      users: {
+      userCreator: {
         relation: BaseModel.BelongsToOneRelation,
         modelClass: UserModel,
         join: {
@@ -21,20 +20,28 @@ class PageModel extends BaseModel {
           to: "users.id",
         },
       },
-      rel_page_user: {
-        relation: BaseModel.HasManyRelation,
-        modelClass: RelPageUserModel,
+      users: {
+        relation: BaseModel.ManyToManyRelation,
+        modelClass: UserModel,
         join: {
           from: "pages.id",
-          to: "rel_page_user.pageId",
+          through: {
+            from: "rel_page_user.pageId",
+            to: "rel_page_user.userId",
+          },
+          to: "users.id",
         },
       },
-      rel_nav_page: {
-        relation: BaseModel.HasManyRelation,
-        modelClass: RelNavPageModel,
+      navigation: {
+        relation: BaseModel.ManyToManyRelation,
+        modelClass: NavigationModel,
         join: {
           from: "pages.id",
-          to: "rel_nav_page.pageId",
+          through: {
+            from: "rel_nav_pages.pageId",
+            to: "rel_nav_pages.navId",
+          },
+          to: "navigation.id",
         },
       },
     }
